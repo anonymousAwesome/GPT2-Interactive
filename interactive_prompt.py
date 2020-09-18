@@ -115,6 +115,8 @@ while True:
 			percent_limit=float(results)
 	except ValueError:
 		pass	
+	except TypeError:
+		pass
 
 	results=input("What range should I display from the top and bottom? (current: "+str(select_range)+") ")
 	try:
@@ -122,7 +124,9 @@ while True:
 			select_range=int(results)
 	except ValueError:
 		pass	
-	
+	except TypeError:
+		pass
+		
 	top_n_size=check_percent(enumerated,percent_limit)+1
 
 	enumerated=enumerated[0:top_n_size]
@@ -169,6 +173,8 @@ while True:
 				again=False
 			except ValueError:
 				pass
+			except TypeError:
+				pass
 			if prompt2=="y":
 				prompt=random_word
 				again=False
@@ -179,6 +185,8 @@ while True:
 					prompt=tokenizer.decode(int(enumerated[prompt3][1][1].item()))
 					again=False
 				except ValueError:
+					pass
+				except TypeError:
 					pass
 				if prompt3=="n":
 					prompt=""
