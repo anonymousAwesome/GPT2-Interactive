@@ -104,6 +104,11 @@ def post_data(prompt):
 	with open ("prompt.txt","w") as f:
 		f.write(file_contents)
 
+with open('prompt.txt', 'x') as f:
+	f.write("""This is a default prompt. 
+Feel free to manually edit the prompt.txt file, even during program execution. 
+Just don't leave it blank or the program will crash.
+Also, it tends to think newlines are incredibly likely if the prompt is too short.""")
 
 while True:
 
