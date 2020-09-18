@@ -117,7 +117,8 @@ while True:
 	results=input("What percent should I show you? (current: "+str(percent_limit)+") ")
 	try:
 		if results!="":
-			percent_limit=float(results)
+			if 1>=float(results)>0:
+				percent_limit=float(results)
 	except ValueError:
 		pass	
 	except TypeError:
@@ -126,7 +127,8 @@ while True:
 	results=input("What range should I display from the top and bottom? (current: "+str(select_range)+") ")
 	try:
 		if results!="":
-			select_range=int(results)
+			if int(results)>0:
+				select_range=int(results)
 	except ValueError:
 		pass	
 	except TypeError:
