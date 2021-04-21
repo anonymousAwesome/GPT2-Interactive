@@ -25,11 +25,6 @@ model = GPT2LMHeadModel.from_pretrained('distilgpt2')
 #tokenizer = GPT2Tokenizer.from_pretrained('./distilgpt2/')
 #model = GPT2LMHeadModel.from_pretrained('./distilgpt2/')
 
-# Mother of Learning file
-#tokenizer = GPT2Tokenizer.from_pretrained('./output/')
-#model = GPT2LMHeadModel.from_pretrained('./output/')
-
-
 # Set the model in evaluation mode to deactivate the DropOut modules
 # This is IMPORTANT to have reproducible results during evaluation!
 model.eval()
