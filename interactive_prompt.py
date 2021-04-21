@@ -1,10 +1,6 @@
-# Requires the huggingface library and either Tensorflow or Pytorch
+import pdb
 
-'''
-[l]oop and [r]and only work if the percentage is some absurdly large
-number like 1000.  Otherwise it usually picks the most likely of the low-
-probability results.
-'''
+# Requires the huggingface library
 
 # newline token is number 198
 # double-newline is 628
@@ -26,8 +22,12 @@ tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
 model = GPT2LMHeadModel.from_pretrained('distilgpt2')
 
 # pre-downloaded file
-# tokenizer = GPT2Tokenizer.from_pretrained('./distilgpt2/')
-# model = GPT2LMHeadModel.from_pretrained('./distilgpt2/')
+#tokenizer = GPT2Tokenizer.from_pretrained('./distilgpt2/')
+#model = GPT2LMHeadModel.from_pretrained('./distilgpt2/')
+
+# Mother of Learning file
+#tokenizer = GPT2Tokenizer.from_pretrained('./output/')
+#model = GPT2LMHeadModel.from_pretrained('./output/')
 
 
 # Set the model in evaluation mode to deactivate the DropOut modules
@@ -37,6 +37,8 @@ model.eval()
 percent_limit=.8
 
 select_range=10 #from top to select_range, and from bottom to (bottom minus select_range)
+
+selection="top"
 
 def append_newlines(file_contents):
 	untruncated_tokens=tokenizer.encode(file_contents)
@@ -49,9 +51,11 @@ def check_percent(data_tensor,limit):
 		if data_tensor[i][1][0].item()>=limit:
 			return i
 
+
 def rand_gen(data_tensor,top_p):
 	number=random.random()
 	number=number*top_p
+	#pdb.set_trace()
 	return check_percent(data_tensor, number)	
 
 def generate_data():
@@ -93,8 +97,26 @@ def generate_data():
 	
 	combined5=torch.cat((cumulative2,combined4),dim=1)
 
-	return list(enumerate(combined5))
+	generated=list(enumerate(combined5))
 
+	top_p_size=check_percent(generated,percent_limit)+1
+
+	enumerated=generated[0:top_p_size]
+	
+	if selection=="top_bottom":
+		enum_top=enumerated[0:select_range]
+		enum_bottom=enumerated[top_p_size-select_range:top_p_size]
+
+		enum_combined=enum_top+enum_bottom
+	else:
+		enum_combined=enumerated[0:select_range]
+	
+	unique_list=[]# the top and bottom lists may overlap. This removes those duplicates.
+	for i in enum_combined:
+		if i not in unique_list:
+			unique_list.append(i)
+	return unique_list
+	
 
 def post_data(prompt):
 	with open ("prompt.txt") as f:
@@ -104,16 +126,9 @@ def post_data(prompt):
 	with open ("prompt.txt","w") as f:
 		f.write(file_contents)
 
-with open('prompt.txt', 'x') as f:
-	f.write("""This is a default prompt. 
-Feel free to manually edit the prompt.txt file, even during program execution. 
-Just don't leave it blank or the program will crash.
-Also, it tends to think newlines are incredibly likely if the prompt is too short.""")
 
 while True:
 
-	enumerated=generate_data()
-	
 	results=input("What percent should I show you? (current: "+str(percent_limit)+") ")
 	try:
 		if results!="":
@@ -124,34 +139,31 @@ while True:
 	except TypeError:
 		pass
 
-	results=input("What range should I display from the top and bottom? (current: "+str(select_range)+") ")
+	print("Should it select from the top or from the top and bottom (t/tb)? (current: "+selection+")")
+	if selection=="top":
+		results=input("OR how many should I display from the top? (current: "+str(select_range)+") ")
+	elif selection=="top_bottom":
+		results=input("OR how many should I display from the top and bottom? (current: "+str(select_range)+") ")
+	else:
+		raise Exception("invalid selection variable")
 	try:
-		if results!="":
+		if results=="t":
+			selection="top"
+		elif results=="tb":
+			selection="top_bottom"
+		elif results!="":
 			if int(results)>0:
 				select_range=int(results)
 	except ValueError:
 		pass	
 	except TypeError:
 		pass
-		
-	top_n_size=check_percent(enumerated,percent_limit)+1
 
-	enumerated=enumerated[0:top_n_size]
+	enumerated=generate_data()
 	
-	enum_top=enumerated[0:select_range]
-	enum_bottom=enumerated[top_n_size-select_range:top_n_size]
-	
-	enum_combined=enum_top+enum_bottom
-	
-	unique_list=[]
-	for i in enum_combined:
-		if i not in unique_list:
-			unique_list.append(i)
-	
-	enumerated=unique_list
 	
 	for i in range(len(enumerated)):
-		print(i,enumerated[i][0], round(enumerated[i][1][2].item(),4), round(enumerated[i][1][0].item(),4), tokenizer.decode(int(enumerated[i][1][1].item())))
+		print(i,enumerated[i][0], round(enumerated[i][1][2].item(),4), round(enumerated[i][1][0].item(),4), tokenizer.decode(int(enumerated[i][1][1].item())),"  ")
 
 #	for i in range(top_n_size):
 #		if random.random()<=enumerated[i][1][1].item()*10:
@@ -167,10 +179,17 @@ while True:
 		prompt=tokenizer.decode(int(enumerated[prompt][1][1].item()))
 		post_data(prompt)
 	
+	# note: loop and rand only work if top-p is some absurdly large number
+	# like 1000.  Otherwise it usually picks the most likely of the low-
+	# probability results.
+	
 	elif prompt=="r":
 		again=True
 		while again==True:
-			random_index=rand_gen(enumerated,percent_limit)
+			if selection=="top":
+				random_index=rand_gen(enumerated,enumerated[-1][1][0].item())
+			else:
+				random_index=rand_gen(enumerated,percent_limit)
 			random_word=tokenizer.decode(int(enumerated[random_index][1][1].item()))
 			print(enumerated[random_index][0], round(enumerated[random_index][1][2].item(),4), round(enumerated[random_index][1][0].item(),4), random_word)
 			prompt2=input("Use this? [y/N], #")
@@ -179,8 +198,6 @@ while True:
 				prompt=tokenizer.decode(int(enumerated[prompt2][1][1].item()))
 				again=False
 			except ValueError:
-				pass
-			except TypeError:
 				pass
 			if prompt2=="y":
 				prompt=random_word
@@ -193,8 +210,6 @@ while True:
 					again=False
 				except ValueError:
 					pass
-				except TypeError:
-					pass
 				if prompt3=="n":
 					prompt=""
 					again=False
@@ -205,7 +220,10 @@ while True:
 		prompt=""
 		for i in range(iterations):
 			enumerated=generate_data()
-			random_index=rand_gen(enumerated,percent_limit)
+			if selection=="top":
+				random_index=rand_gen(enumerated,enumerated[-1][1][0].item())
+			else:
+				random_index=rand_gen(enumerated,percent_limit)
 			random_word=tokenizer.decode(int(enumerated[random_index][1][1].item()))
 			#print(random_word)
 			print(enumerated[random_index][0], round(enumerated[random_index][1][2].item(),4), round(enumerated[random_index][1][0].item(),4), random_word)
