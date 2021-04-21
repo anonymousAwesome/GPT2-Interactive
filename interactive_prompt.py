@@ -174,9 +174,9 @@ while True:
 		prompt=tokenizer.decode(int(enumerated[prompt][1][1].item()))
 		post_data(prompt)
 	
-	# note: loop and rand only work if top-p is some absurdly large number
-	# like 1000.  Otherwise it usually picks the most likely of the low-
-	# probability results.
+	# note: when using top_bottom, loop and rand only work if top-p is 
+	# some absurdly large number like 1000.  Otherwise it usually picks
+	# the most likely of the low- probability results.
 	
 	elif prompt=="r":
 		again=True
